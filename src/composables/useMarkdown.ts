@@ -101,9 +101,9 @@ export function useMarkdown(content: Ref<string>) {
       listitem({ tokens, checked, sourceLine }: any) {
         const attr = sourceLine !== undefined ? ` data-source-line="${sourceLine}"` : ''
         if (checked !== null && checked !== undefined) {
-          return `<li data-checked="${checked}"${attr}>${this.parser.parseInline(tokens)}</li>`
+          return `<li data-checked="${checked}"${attr}>${this.parser.parse(tokens)}</li>`
         }
-        return `<li${attr}>${this.parser.parseInline(tokens)}</li>`
+        return `<li${attr}>${this.parser.parse(tokens)}</li>`
       },
       table({ header, rows, sourceLine }: any) {
         const attr = sourceLine !== undefined ? ` data-source-line="${sourceLine}"` : ''
