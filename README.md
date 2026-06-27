@@ -1,4 +1,10 @@
+<div align="center">
+
+<img src="./public/favicon.svg" alt="Markdown Printer" style="width: 256px;"/>
+
 # Markdown Printer
+
+</div>
 
 A paged markdown previewer that brings markdown to real-world paper. Write in markdown, preview with pagination, and print or export to PDF — exactly as it will appear on paper.
 
