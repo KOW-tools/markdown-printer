@@ -1,11 +1,30 @@
 <template>
   <div class="footer-bar">
-    <div class="footer-left">
+    <div class="footer-left" v-show="viewMode !== 'preview'">
       <span class="stat">{{ wordCount }} words</span>
       <span class="separator">|</span>
       <span class="stat">{{ charCount }} chars</span>
     </div>
+    <span class="separator" v-show="viewMode !== 'preview'">|</span>
+    <div class="footer-spacer"></div>
     <div class="footer-right">
+      <div class="scale-control" v-show="viewMode !== 'editor'">
+        <Button severity="secondary" text size="small" class="scale-btn" @click="decrement" :disabled="scale <= scaleRange.min">
+          <ZoomOut :size="14" />
+        </Button>
+        <Slider
+          :modelValue="scale"
+          :min="scaleRange.min"
+          :max="scaleRange.max"
+          :step="0.01"
+          @update:modelValue="$emit('update:scale', Array.isArray($event) ? $event[0] : $event)"
+          class="scale-slider"
+        />
+        <Button severity="secondary" text size="small" class="scale-btn" @click="increment" :disabled="scale >= scaleRange.max">
+          <ZoomIn :size="14" />
+        </Button>
+        <span class="scale-label">{{ Math.round(scale * 100) }}%</span>
+      </div>
       <div class="view-mode-control">
         <Button
           :severity="viewMode === 'editor' ? 'info' : 'secondary'"
@@ -38,23 +57,6 @@
           <Columns2 :size="14" />
         </Button>
       </div>
-      <div class="scale-control">
-        <Button severity="secondary" text size="small" class="scale-btn" @click="decrement" :disabled="scale <= scaleRange.min">
-          <ZoomOut :size="14" />
-        </Button>
-        <Slider
-          :modelValue="scale"
-          :min="scaleRange.min"
-          :max="scaleRange.max"
-          :step="0.01"
-          @update:modelValue="$emit('update:scale', Array.isArray($event) ? $event[0] : $event)"
-          class="scale-slider"
-        />
-        <Button severity="secondary" text size="small" class="scale-btn" @click="increment" :disabled="scale >= scaleRange.max">
-          <ZoomIn :size="14" />
-        </Button>
-        <span class="scale-label">{{ Math.round(scale * 100) }}%</span>
-      </div>
     </div>
   </div>
 </template>
@@ -74,6 +76,7 @@ const props = defineProps<{
   pageSize: string
   orientation: 'portrait' | 'landscape'
   viewMode: ViewMode
+  containerWidth: number
 }>()
 
 const emit = defineEmits<{
@@ -95,7 +98,7 @@ const wordCount = computed(() => {
 const charCount = computed(() => effectiveContent.value.length)
 
 const currentPageSize = computed(() => PAGE_SIZES.find(p => p.name === props.pageSize) || PAGE_SIZES[0])
-const scaleRange = computed(() => getScaleRange(currentPageSize.value, props.orientation, window.innerWidth / 2))
+const scaleRange = computed(() => getScaleRange(currentPageSize.value, props.orientation, props.containerWidth))
 
 function increment() {
   const next = Math.round(props.scale * 10 + 1) / 10
@@ -112,7 +115,6 @@ function decrement() {
 .footer-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 4px 12px;
   background: var(--bg-secondary);
   border-top: 1px solid var(--border-color);
@@ -120,12 +122,21 @@ function decrement() {
   color: var(--text-primary);
   opacity: 0.8;
   min-height: 28px;
+  flex-shrink: 0;
+}
+
+.footer-spacer {
+  flex: 1;
 }
 
 .footer-left {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.stat {
+  text-align: center;
 }
 
 .footer-right {
@@ -169,7 +180,7 @@ function decrement() {
 }
 
 .scale-label {
-  min-width: 35px;
+  min-width: 3em;
   text-align: right;
 }
 </style>

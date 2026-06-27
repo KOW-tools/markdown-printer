@@ -25,6 +25,7 @@
         :content="activeTab?.content || ''"
         :rendered-html="renderedHtml"
         :is-generating="isGenerating"
+        :view-mode="settings.viewMode"
         @update:pageSize="settings.pageSize = $event"
         @update:font="settings.font = $event"
         @update:rtl="settings.rtl = $event"
@@ -72,9 +73,11 @@
             :rtl="settings.rtl"
             :margin="settings.margin"
             :orientation="settings.orientation"
+            :container-width="previewContainerWidth"
             class="preview-section"
             :class="{ 'full-width': settings.viewMode !== 'split' }"
             @preview-click="onPreviewClick"
+            @update:scale="settings.scale = $event"
           />
         </div>
 
@@ -85,6 +88,7 @@
           :page-size="settings.pageSize"
           :orientation="settings.orientation"
           :view-mode="settings.viewMode"
+          :container-width="previewContainerWidth"
           @update:scale="settings.scale = $event"
           @update:viewMode="settings.viewMode = $event"
         />
@@ -131,9 +135,11 @@ const isNewTab = computed(() => {
 })
 
 // Settings
-const previewWidth = window.innerWidth / 2
+const defaultScaleRange = getScaleRange(PAGE_SIZES.find(p => p.name === 'A4')!, 'portrait', window.innerWidth / 2)
 
-const defaultScaleRange = getScaleRange(PAGE_SIZES.find(p => p.name === 'A4')!, 'portrait', previewWidth)
+const previewContainerWidth = computed(() =>
+  settings.value.viewMode === 'preview' ? window.innerWidth : window.innerWidth / 2
+)
 
 const settings = ref<EditorSettings>({
   pageSize: 'A4',
@@ -147,7 +153,7 @@ const settings = ref<EditorSettings>({
   contentScale: 1.0,
   contentScaleMap: {} as Record<string, number>,
   softWrap: true,
-  viewMode: 'split',
+  viewMode: window.innerWidth < 768 ? 'editor' : 'split',
 })
 
 // Load saved settings
@@ -176,21 +182,33 @@ watch(settings, (newSettings) => {
   saveSettings(newSettings)
 }, { deep: true })
 
+function recalcScaleToFit() {
+  const size = PAGE_SIZES.find(p => p.name === settings.value.pageSize)
+  if (size) {
+    const range = getScaleRange(size, settings.value.orientation, previewContainerWidth.value)
+    settings.value.scale = range.default
+    if (!settings.value.contentScaleMap) {
+      settings.value.contentScaleMap = {}
+    }
+    if (!(size.name in settings.value.contentScaleMap)) {
+      settings.value.contentScaleMap[size.name] = getContentScaleFactor(size)
+    }
+    settings.value.contentScale = settings.value.contentScaleMap[size.name]
+  }
+}
+
 // Auto-adjust scale when page size or orientation changes
 watch(
   () => [settings.value.pageSize, settings.value.orientation],
-  () => {
-    const size = PAGE_SIZES.find(p => p.name === settings.value.pageSize)
-    if (size) {
-      const range = getScaleRange(size, settings.value.orientation, window.innerWidth / 2)
-      settings.value.scale = range.default
-      if (!settings.value.contentScaleMap) {
-        settings.value.contentScaleMap = {}
-      }
-      if (!(size.name in settings.value.contentScaleMap)) {
-        settings.value.contentScaleMap[size.name] = getContentScaleFactor(size)
-      }
-      settings.value.contentScale = settings.value.contentScaleMap[size.name]
+  recalcScaleToFit,
+)
+
+// Auto-adjust scale when switching between split and preview-only
+watch(
+  () => settings.value.viewMode,
+  (mode) => {
+    if (mode === 'preview' || mode === 'split') {
+      recalcScaleToFit()
     }
   },
 )
@@ -283,6 +301,7 @@ function handleCloseTab(id: string) {
 <style scoped>
 .app {
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;

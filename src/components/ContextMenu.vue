@@ -8,22 +8,22 @@
       @click.stop
     >
       <div class="icon-row">
-        <Button :severity="activeFormats?.bold ? 'info' : 'contrast'" text size="small" @click="handleAction('bold')" title="Bold">
+        <Button :severity="activeFormats?.bold ? 'info' : 'contrast'" size="small" variant="outlined" @click="handleAction('bold')" title="Bold">
           <template #icon>
             <Bold :size="16" />
           </template>
         </Button>
-        <Button :severity="activeFormats?.italic ? 'info' : 'contrast'" text size="small" @click="handleAction('italic')" title="Italic">
+        <Button :severity="activeFormats?.italic ? 'info' : 'contrast'" size="small" variant="outlined" @click="handleAction('italic')" title="Italic">
           <template #icon>
             <Italic :size="16" />
           </template>
         </Button>
-        <Button :severity="activeFormats?.underline ? 'info' : 'contrast'" text size="small" @click="handleAction('underline')" title="Underline">
+        <Button :severity="activeFormats?.underline ? 'info' : 'contrast'" size="small" variant="outlined" @click="handleAction('underline')" title="Underline">
           <template #icon>
             <Underline :size="16" />
           </template>
         </Button>
-        <Button :severity="activeFormats?.strikethrough ? 'info' : 'contrast'" text size="small" @click="handleAction('strikethrough')" title="Strikethrough">
+        <Button :severity="activeFormats?.strikethrough ? 'info' : 'contrast'" size="small" variant="outlined" @click="handleAction('strikethrough')" title="Strikethrough">
           <template #icon>
             <Strikethrough :size="16" />
           </template>
@@ -34,8 +34,7 @@
           v-for="level in 6"
           :key="level"
           :severity="activeFormats?.heading === level ? 'info' : 'contrast'"
-          text
-          size="small"
+          size="small" variant="outlined"
           @click="handleAction(`heading${level}`)"
           :title="`Heading ${level}`"
         >
@@ -45,35 +44,35 @@
         </Button>
       </div>
       <div class="icon-row">
-        <Button :severity="activeFormats?.listType === 'ul' ? 'info' : 'contrast'" text size="small" @click="handleAction('unorderedList')" title="Unordered List">
+        <Button :severity="activeFormats?.listType === 'ul' ? 'info' : 'contrast'" size="small" variant="outlined" @click="handleAction('unorderedList')" title="Unordered List">
           <template #icon>
             <List :size="16" />
           </template>
         </Button>
-        <Button :severity="activeFormats?.listType === 'ol' ? 'info' : 'contrast'" text size="small" @click="handleAction('orderedList')" title="Ordered List">
+        <Button :severity="activeFormats?.listType === 'ol' ? 'info' : 'contrast'" size="small" variant="outlined" @click="handleAction('orderedList')" title="Ordered List">
           <template #icon>
             <ListOrdered :size="16" />
           </template>
         </Button>
       </div>
       <div class="icon-row">
-        <Button :severity="activeFormats?.alignment === 'left' ? 'info' : 'contrast'" text size="small" @click="handleAction('alignLeft')" title="Align Left">
+        <Button :severity="activeFormats?.alignment === 'left' ? 'info' : 'contrast'" size="small" variant="outlined" @click="handleAction('alignLeft')" title="Align Left">
           <template #icon>
             <TextAlignStart :size="16" />
           </template>
         </Button>
-        <Button :severity="activeFormats?.alignment === 'center' ? 'info' : 'contrast'" text size="small" @click="handleAction('alignCenter')" title="Align Center">
+        <Button :severity="activeFormats?.alignment === 'center' ? 'info' : 'contrast'" size="small" variant="outlined" @click="handleAction('alignCenter')" title="Align Center">
           <template #icon>
             <TextAlignCenter :size="16" />
           </template>
         </Button>
-        <Button :severity="activeFormats?.alignment === 'right' ? 'info' : 'contrast'" text size="small" @click="handleAction('alignRight')" title="Align Right">
+        <Button :severity="activeFormats?.alignment === 'right' ? 'info' : 'contrast'" size="small" variant="outlined" @click="handleAction('alignRight')" title="Align Right">
           <template #icon>
             <TextAlignEnd :size="16" />
           </template>
         </Button>
       </div>
-      <span class="separator"></span>
+      <Divider />
       <div class="text-row">
         <Button severity="contrast" text size="small" @click="handleAction('link')">Link</Button>
         <Button severity="contrast" text size="small" @click="handleAction('image')">Image</Button>
@@ -141,6 +140,7 @@ import {
   TextAlignCenter,
   TextAlignEnd,
 } from '@lucide/vue'
+import Divider from 'primevue/divider'
 
 interface ActiveFormats {
   bold: boolean
@@ -286,13 +286,6 @@ onUnmounted(() => {
 
 .text-row :deep(.p-button) {
   justify-content: flex-start;
-}
-
-.separator {
-  width: 100%;
-  height: 1px;
-  background: var(--border-color);
-  margin: 4px 0;
 }
 
 .table-picker {

@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <Dialog v-model:visible="visible" header="Privacy Policy" modal :closable="true" :style="{ minWidth: '600px', maxWidth: '90vw', maxHeight: '85vh' }">
+    <Dialog v-model:visible="visible" header="Privacy Policy" modal :closable="true" :style="{ maxWidth: '90vw' }">
       <div class="privacy-content markdown-body" v-html="policyHtml"></div>
     </Dialog>
   </Teleport>

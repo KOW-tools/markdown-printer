@@ -15,20 +15,20 @@
           @rename="(name) => $emit('rename-tab', tab.id, name)"
         />
       </TransitionGroup>
-      <button class="add-tab-btn" @click="$emit('add-tab')" title="New tab">
+      <Button severity="secondary" text size="small" class="add-tab-btn" @click="$emit('add-tab')" title="New tab">
         <Plus :size="14" />
-      </button>
+      </Button>
     </div>
-    <button class="icon-btn" @click="toggleTheme" :title="themeLabel">
+    <Button severity="secondary" text size="small" class="icon-btn" @click="toggleTheme" :title="themeLabel">
       <Sun v-if="themeMode === 'light'" :size="16" />
       <Moon v-else-if="themeMode === 'dark'" :size="16" />
-      <Monitor v-else :size="16" />
-    </button>
-    <button class="icon-btn" @click="showAbout = true" title="About">
-      <Info :size="16" />
-    </button>
+      <Monitor v-else :size="14" />
+    </Button>
+    <Button severity="secondary" text size="small" class="icon-btn" @click="showAbout = true" title="About">
+      <Info :size="14" />
+    </Button>
 
-    <Dialog v-model:visible="showAbout" header="About" modal :closable="true" :style="{ minWidth: '420px', maxWidth: '90vw' }">
+    <Dialog v-model:visible="showAbout" header="About" modal :closable="true" :style="{ maxWidth: '90vw' }">
       <div class="about-content">
         <div class="about-header">
           <img :src="faviconUrl" alt="Markdown Printer" class="about-favicon" />
@@ -37,14 +37,14 @@
         <p class="about-desc">A paged markdown previewer that brings markdown to real-world paper. Write in markdown, preview with pagination, and print or export to PDF — exactly as it will appear on paper.</p>
         <p class="about-license">Released under the Apache 2.0 License.</p>
         <div class="about-actions">
-          <a href="https://github.com/KOWX712/markdown-printer" target="_blank" rel="noopener noreferrer" class="about-link">
+          <Button severity="secondary" outlined as="a" href="https://github.com/KOWX712/markdown-printer" target="_blank" rel="noopener noreferrer" class="about-link">
             <ExternalLink :size="16" />
             View Source Code
-          </a>
-          <button class="about-link" @click="showAbout = false; $emit('open-privacy')">
+          </Button>
+          <Button severity="secondary" outlined class="about-link" @click="showAbout = false; $emit('open-privacy')">
             <Shield :size="16" />
             Privacy Policy
-          </button>
+          </Button>
         </div>
       </div>
     </Dialog>
@@ -57,6 +57,7 @@ import type { Tab } from '../utils/types'
 import TabItem from './TabItem.vue'
 import { Plus, Sun, Moon, Monitor, Info, ExternalLink, Shield } from '@lucide/vue'
 import Dialog from 'primevue/dialog'
+import Button from 'primevue/button'
 import faviconUrl from '../../public/favicon.svg?url'
 
 defineProps<{
@@ -160,42 +161,15 @@ function toggleTheme() {
 }
 
 .add-tab-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: var(--text-primary);
-  cursor: pointer;
   width: 28px;
   height: 28px;
-  border-radius: 4px;
-  opacity: 0.6;
   flex-shrink: 0;
-}
-
-.add-tab-btn:hover {
-  opacity: 1;
-  background: var(--border-color);
 }
 
 .icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: var(--text-primary);
-  cursor: pointer;
   width: 32px;
   height: 36px;
-  opacity: 0.6;
   flex-shrink: 0;
-}
-
-.icon-btn:hover {
-  opacity: 1;
-  background: var(--border-color);
 }
 
 .tabs-favicon {
@@ -288,22 +262,6 @@ function toggleTheme() {
 }
 
 .about-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
   text-decoration: none;
-  color: var(--text-primary);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.about-link:hover {
-  background: var(--border-color);
 }
 </style>

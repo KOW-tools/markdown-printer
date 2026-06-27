@@ -20,9 +20,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, toRef } from 'vue'
+import { computed, ref, toRef, onMounted, onUnmounted } from 'vue'
 import { fontFamilyCSS } from '../utils/css'
-import { PAGE_SIZES } from '../utils/constants'
+import { PAGE_SIZES, getScaleRange } from '../utils/constants'
 import type { MarginConfig } from '../utils/types'
 import { usePagination } from '../composables/usePagination'
 
@@ -36,16 +36,78 @@ const props = defineProps<{
   margin: MarginConfig
   orientation: 'portrait' | 'landscape'
   contentScale: number
+  containerWidth: number
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'preview-click': [event: MouseEvent]
+  'update:scale': [value: number]
 }>()
 
 const previewContainer = ref<HTMLElement | null>(null)
 
 const currentPageSize = computed(() => {
   return PAGE_SIZES.find(p => p.name === props.pageSize) || PAGE_SIZES[0]
+})
+
+const scaleRange = computed(() => getScaleRange(currentPageSize.value, props.orientation, props.containerWidth))
+
+// --- Zoom: Ctrl+wheel ---
+function onWheel(e: WheelEvent) {
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault()
+    const delta = -Math.sign(e.deltaY)
+    const step = 0.05
+    const raw = Math.round((props.scale + delta * step) * 100) / 100
+    const clamped = Math.max(scaleRange.value.min, Math.min(scaleRange.value.max, raw))
+    emit('update:scale', clamped)
+  }
+}
+
+// --- Zoom: pinch-to-touch ---
+let pinchStartDist = 0
+let pinchStartScale = 0
+
+function touchDist(touches: TouchList): number {
+  const dx = touches[0].clientX - touches[1].clientX
+  const dy = touches[0].clientY - touches[1].clientY
+  return Math.sqrt(dx * dx + dy * dy)
+}
+
+function onTouchStart(e: TouchEvent) {
+  if (e.touches.length === 2) {
+    pinchStartDist = touchDist(e.touches)
+    pinchStartScale = props.scale
+  }
+}
+
+function onTouchMove(e: TouchEvent) {
+  if (e.touches.length === 2 && pinchStartDist > 0) {
+    e.preventDefault()
+    const curDist = touchDist(e.touches)
+    const ratio = curDist / pinchStartDist
+    const raw = Math.round(pinchStartScale * ratio * 100) / 100
+    const clamped = Math.max(scaleRange.value.min, Math.min(scaleRange.value.max, raw))
+    emit('update:scale', clamped)
+  }
+}
+
+onMounted(() => {
+  const container = previewContainer.value
+  if (container) {
+    container.addEventListener('wheel', onWheel, { passive: false })
+    container.addEventListener('touchstart', onTouchStart, { passive: true })
+    container.addEventListener('touchmove', onTouchMove, { passive: false })
+  }
+})
+
+onUnmounted(() => {
+  const container = previewContainer.value
+  if (container) {
+    container.removeEventListener('wheel', onWheel)
+    container.removeEventListener('touchstart', onTouchStart)
+    container.removeEventListener('touchmove', onTouchMove)
+  }
 })
 
 const MM_TO_PX = 96 / 25.4
