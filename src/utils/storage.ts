@@ -1,4 +1,4 @@
-import type { Tab, EditorSettings } from './types'
+import type { Tab, EditorSettings, LlmConfig } from './types'
 import { STORAGE_KEYS } from './constants'
 
 export function loadTabs(): Tab[] {
@@ -209,4 +209,84 @@ export async function deleteFont(family: string): Promise<void> {
   } catch (e) {
     console.error('[IDB] Failed to delete font:', e)
   }
+}
+
+// --- LLM Config (AES-GCM encrypted) ---
+
+const LLM_SALT_KEY = 'markdown-printer-llm-salt'
+
+function getDeviceFingerprint(): string {
+  return `${navigator.userAgent}|${screen.width}x${screen.height}`
+}
+
+async function getEncryptionKey(): Promise<CryptoKey> {
+  const saltStr = localStorage.getItem(LLM_SALT_KEY)
+  let saltBuffer: ArrayBuffer
+  if (saltStr) {
+    const raw = Uint8Array.from(atob(saltStr), c => c.charCodeAt(0))
+    saltBuffer = raw.buffer
+  } else {
+    saltBuffer = crypto.getRandomValues(new Uint8Array(16)).buffer
+    localStorage.setItem(LLM_SALT_KEY, btoa(String.fromCharCode(...new Uint8Array(saltBuffer))))
+  }
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(getDeviceFingerprint()),
+    'PBKDF2',
+    false,
+    ['deriveKey'],
+  )
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: saltBuffer, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  )
+}
+
+export async function encryptApiKey(key: string): Promise<string> {
+  const cryptoKey = await getEncryptionKey()
+  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const encoded = new TextEncoder().encode(key)
+  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, encoded)
+  const combined = new Uint8Array(iv.length + new Uint8Array(ciphertext).length)
+  combined.set(iv)
+  combined.set(new Uint8Array(ciphertext), iv.length)
+  return btoa(String.fromCharCode(...combined))
+}
+
+export async function decryptApiKey(encrypted: string): Promise<string> {
+  const cryptoKey = await getEncryptionKey()
+  const combined = Uint8Array.from(atob(encrypted), c => c.charCodeAt(0))
+  const iv = combined.slice(0, 12)
+  const ciphertext = combined.slice(12)
+  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ciphertext)
+  return new TextDecoder().decode(decrypted)
+}
+
+export async function saveLlmConfig(config: LlmConfig): Promise<void> {
+  const encrypted = await encryptApiKey(config.apiKey)
+  const stored = { endpoint: config.endpoint, apiKey: encrypted, model: config.model }
+  localStorage.setItem(STORAGE_KEYS.LLM_CONFIG, JSON.stringify(stored))
+}
+
+export async function loadLlmConfig(): Promise<LlmConfig | null> {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.LLM_CONFIG)
+    if (!data) return null
+    const stored = JSON.parse(data)
+    const apiKey = await decryptApiKey(stored.apiKey)
+    return { endpoint: stored.endpoint, apiKey, model: stored.model }
+  } catch {
+    return null
+  }
+}
+
+export function isLlmEnabled(): boolean {
+  return localStorage.getItem(STORAGE_KEYS.LLM_ENABLED) === 'true'
+}
+
+export function setLlmEnabled(enabled: boolean): void {
+  localStorage.setItem(STORAGE_KEYS.LLM_ENABLED, String(enabled))
 }

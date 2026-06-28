@@ -53,6 +53,7 @@
             ref="editorRef"
             v-model="editorContent"
             :soft-wrap="settings.softWrap"
+            :llm-enabled="llmEnabled"
             class="editor-section"
             :class="{ 'full-width': settings.viewMode !== 'split' }"
             @editor-ready="onEditorReady"
@@ -89,13 +90,18 @@
           :orientation="settings.orientation"
           :view-mode="settings.viewMode"
           :container-width="previewContainerWidth"
+          :llm-enabled="llmEnabled"
+          :llm-connected="llmConnected"
+          :llm-model="llmModel"
           @update:scale="settings.scale = $event"
           @update:viewMode="settings.viewMode = $event"
+          @open-ai-settings="showAiSettings = true"
         />
       </template>
     </template>
 
     <PrivacyPolicy v-model="showPrivacy" />
+    <AiSettings v-model="showAiSettings" @saved="refreshLlmState" />
   </div>
 </template>
 
@@ -107,12 +113,13 @@ import Toolbar from './components/Toolbar.vue'
 import EditorPane from './components/EditorPane.vue'
 import PreviewPane from './components/PreviewPane.vue'
 import FooterBar from './components/FooterBar.vue'
+import AiSettings from './components/AiSettings.vue'
 import PrivacyPolicy from './components/PrivacyPolicy.vue'
 import { useTabs } from './composables/useTabs'
 import { useMarkdown } from './composables/useMarkdown'
 import { useScrollSync } from './composables/useScrollSync'
 import { usePDF } from './composables/usePDF'
-import { loadSettings, saveSettings } from './utils/storage'
+import { loadSettings, saveSettings, loadLlmConfig, isLlmEnabled } from './utils/storage'
 import { PAGE_SIZES, getScaleRange, getContentScaleFactor } from './utils/constants'
 import type { EditorSettings, Tab } from './utils/types'
 
@@ -128,6 +135,10 @@ const activeTab = computed(() => getActiveTab())
 const editorContent = ref(activeTab.value?.content || '')
 const newTabIds = ref(new Set<string>())
 const showPrivacy = ref(false)
+const showAiSettings = ref(false)
+const llmEnabled = ref(false)
+const llmConnected = ref(false)
+const llmModel = ref('')
 
 const isNewTab = computed(() => {
   if (!activeTabId.value) return false
@@ -157,7 +168,7 @@ const settings = ref<EditorSettings>({
 })
 
 // Load saved settings
-onMounted(() => {
+onMounted(async () => {
   if (activeTabId.value && !getActiveTab()?.content) {
     newTabIds.value.add(activeTabId.value)
   }
@@ -174,12 +185,21 @@ onMounted(() => {
   if (current) {
     settings.value.contentScale = settings.value.contentScaleMap![current.name]
   }
+
+  await refreshLlmState()
 })
 
 // Save settings on change
 watch(settings, (newSettings) => {
   saveSettings(newSettings)
 }, { deep: true })
+
+async function refreshLlmState() {
+  llmEnabled.value = isLlmEnabled()
+  const config = await loadLlmConfig()
+  llmConnected.value = !!(config?.endpoint && config?.apiKey)
+  llmModel.value = config?.model || ''
+}
 
 function recalcScaleToFit() {
   const size = PAGE_SIZES.find(p => p.name === settings.value.pageSize)

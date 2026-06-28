@@ -139,6 +139,8 @@ export const STORAGE_KEYS = {
   TABS: 'markdown-printer-tabs',
   SETTINGS: 'markdown-printer-settings',
   ACTIVE_TAB: 'markdown-printer-active-tab',
+  LLM_CONFIG: 'markdown-printer-llm-config',
+  LLM_ENABLED: 'markdown-printer-llm-enabled',
 } as const
 
 export const MARGIN_PRESETS: Record<string, MarginConfig> = {

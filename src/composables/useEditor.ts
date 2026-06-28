@@ -7,6 +7,7 @@ import { defaultKeymap, history, historyKeymap, indentWithTab, undo as cmUndo, r
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search'
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete'
 import { lintKeymap } from '@codemirror/lint'
+import { ghostTextExtension } from '../plugins/ghostText'
 
 const lightTheme = EditorView.theme({
   '&': { backgroundColor: '#ffffff' },
@@ -54,6 +55,7 @@ export function useEditor(
   const selectedText = ref('')
   const themeCompartment = new Compartment()
   const softWrapCompartment = new Compartment()
+  const llmCompartment = new Compartment()
   let mediaQuery: MediaQueryList | null = null
   let handleThemeChange: ((e: MediaQueryListEvent) => void) | null = null
   let themeObserver: MutationObserver | null = null
@@ -266,6 +268,7 @@ export function useEditor(
         highlightSelectionMatches(),
         autocompletion(),
         markdown({ base: markdownLanguage, codeLanguages: languages }),
+        llmCompartment.of([]),
         pageBreakKeymap,
         tableNavigationKeymap,
         keymap.of([
@@ -290,6 +293,13 @@ export function useEditor(
           '.cm-content': {
             fontFamily: "'Source Code Pro', 'Fira Code', monospace",
             paddingBottom: '20vh',
+          },
+          '.cm-ghost-text': {
+            color: 'inherit',
+            opacity: '0.4',
+            fontStyle: 'italic',
+            pointerEvents: 'none',
+            whiteSpace: 'pre-wrap',
           },
         }),
       ],
@@ -343,6 +353,14 @@ export function useEditor(
     }
   }
 
+  function setLlmEnabled(enabled: boolean) {
+    if (editorView.value) {
+      editorView.value.dispatch({
+        effects: llmCompartment.reconfigure(enabled ? ghostTextExtension : []),
+      })
+    }
+  }
+
   onMounted(() => {
     createEditor()
 
@@ -389,5 +407,6 @@ export function useEditor(
     scrollToLine,
     focus,
     setSoftWrap,
+    setLlmEnabled,
   }
 }

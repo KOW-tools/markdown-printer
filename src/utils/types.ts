@@ -32,6 +32,12 @@ export type Orientation = 'portrait' | 'landscape'
 
 export type ViewMode = 'editor' | 'preview' | 'split'
 
+export interface LlmConfig {
+  endpoint: string
+  apiKey: string
+  model: string
+}
+
 export interface EditorSettings {
   pageSize: string
   scale: number

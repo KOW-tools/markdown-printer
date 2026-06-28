@@ -4,6 +4,11 @@
       <span class="stat">{{ wordCount }} words</span>
       <span class="separator">|</span>
       <span class="stat">{{ charCount }} chars</span>
+      <span class="separator">|</span>
+      <button class="ai-status" :class="{ disabled: !llmEnabled }" @click="$emit('open-ai-settings')" :title="llmEnabled ? (llmConnected ? 'AI connected' : 'AI error') : 'AI disabled — click to configure'">
+        <span class="ai-dot" :class="!llmEnabled ? 'off' : (llmConnected ? 'connected' : 'error')"></span>
+        <span class="ai-label">{{ llmEnabled ? llmModel : 'AI Off' }}</span>
+      </button>
     </div>
     <div class="footer-spacer"></div>
     <div class="footer-right">
@@ -76,11 +81,15 @@ const props = defineProps<{
   orientation: 'portrait' | 'landscape'
   viewMode: ViewMode
   containerWidth: number
+  llmEnabled: boolean
+  llmConnected: boolean
+  llmModel: string
 }>()
 
 const emit = defineEmits<{
   'update:scale': [value: number]
   'update:viewMode': [value: ViewMode]
+  'open-ai-settings': []
 }>()
 
 function stripHtml(text: string): string {
@@ -146,6 +155,50 @@ function decrement() {
 
 .separator {
   color: var(--border-color);
+}
+
+.ai-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+
+.ai-status:hover {
+  text-decoration: underline;
+}
+
+.ai-status.disabled {
+  opacity: 0.5;
+}
+
+.ai-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.ai-dot.off {
+  background-color: #888;
+}
+
+.ai-dot.connected {
+  background-color: #22c55e;
+}
+
+.ai-dot.error {
+  background-color: #ef4444;
+}
+
+.ai-label {
+  opacity: 0.8;
 }
 
 .view-mode-control {
