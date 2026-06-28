@@ -14,6 +14,7 @@
           :placeholder="hasSavedKey ? '•••••••• (saved)' : 'sk-...'"
           class="w-full"
         />
+        <small class="field-hint">Your key is stored locally in your browser and is never shared.</small>
       </div>
       <div class="field">
         <label for="ai-model">Model</label>
@@ -251,6 +252,12 @@ async function save() {
   padding: 1px 4px;
   border-radius: 3px;
   font-size: 11px;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: var(--text-secondary, #6b7280);
+  margin-top: 2px;
 }
 
 .w-full {

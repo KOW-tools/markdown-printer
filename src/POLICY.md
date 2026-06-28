@@ -28,7 +28,7 @@ This data is handled by our hosting provider in accordance with their respective
 To provide features like session persistence and font uploads, we use browser-native storage technologies:
 
 * **IndexedDB:** Used to store tab history (markdown content) and uploaded custom fonts. This data never leaves your device.
-* **localStorage:** Used to remember your editor preferences such as page size, font selection, margin settings, theme preference, and view mode.
+* **localStorage:** Used to remember your editor preferences such as page size, font selection, margin settings, theme preference, view mode, and LLM API keys.
 * **sessionStorage:** Used to maintain your current editing session and active tab state.
 
 You can clear all stored data at any time through your browser's settings or developer tools.
@@ -41,12 +41,15 @@ All locally stored data is used solely to:
 * Remember your display preferences across sessions.
 * Provide access to previously opened documents via the history feature.
 * Retain custom fonts you have uploaded for use in document rendering.
+* Store your LLM API key for AI autocomplete (only sent directly from your browser to the API provider you configure).
 
 ## 5. Third-Party Services
 
 Markdown Printer does **not** integrate with any third-party analytics, advertising, payment, or tracking services. We do not use Google Analytics, Hotjar, or any similar tools.
 
 The application loads web fonts from [@fontsource](https://www.google.com/search?q=https://www.npmjs.com/package/%40fontsource) as bundled assets. No user data is sent to external font providers.
+
+**LLM Autocomplete (Opt-in):** When you enable AI autocomplete and configure an API provider, your API key is sent directly from your browser to the API provider you configure (e.g., OpenAI, Anthropic). Markdown Printer never sees or stores your API key. All LLM requests are made directly between your browser and the API provider.
 
 ## 6. Cookies and Tracking
 
