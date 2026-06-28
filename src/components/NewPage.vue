@@ -27,6 +27,16 @@
         </div>
       </div>
 
+      <Button
+        severity="secondary"
+        text
+        class="learn-btn"
+        @click="$emit('upload-file', exampleContent, 'Markdown Example')"
+      >
+        <CircleQuestionMark :size="16" />
+        <span>Learn Markdown</span>
+      </Button>
+
       <div v-if="history.length > 0" class="history-section">
         <div class="history-header">
           <h2>History</h2>
@@ -61,7 +71,8 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import Button from 'primevue/button'
 import type { Tab } from '../utils/types'
 import { loadTabHistory, removeTabFromHistory, clearTabHistory } from '../utils/storage'
-import { FileEdit, Upload, FileUp, Trash2, FileText, X } from '@lucide/vue'
+import { FileEdit, Upload, FileUp, Trash2, FileText, X, CircleQuestionMark } from '@lucide/vue'
+import exampleContent from '../EXAMPLE.md?raw'
 
 const emit = defineEmits<{
   'create-new': []
@@ -172,6 +183,7 @@ function formatDate(timestamp: number): string {
 .new-page-content {
   display: flex;
   flex-direction: column;
+  align-items: center;
   text-align: center;
   width: 100%;
   max-width: 800px;
@@ -193,6 +205,7 @@ function formatDate(timestamp: number): string {
 
 .drop-area {
   position: relative;
+  width: 100%;
   display: flex;
   gap: 12px;
   justify-content: center;
@@ -249,8 +262,14 @@ function formatDate(timestamp: number): string {
   font-weight: 600;
 }
 
+.learn-btn {
+  width: fit-content;
+  font-size: 13px;
+}
+
 .history-section {
   text-align: left;
+  width: 100%;
 }
 
 .history-header {
