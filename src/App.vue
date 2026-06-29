@@ -270,7 +270,7 @@ watch(activeTabId, () => {
 
 // Insert page break
 function insertPageBreak() {
-  editorRef.value?.insertText('\n\n<div style="page-break-after: always;"></div>\n\n')
+  editorRef.value?.insertText('\n<div style="page-break-after: always;"></div>\n')
 }
 
 function handleAddTab() {

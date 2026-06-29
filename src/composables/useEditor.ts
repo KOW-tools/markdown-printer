@@ -229,27 +229,6 @@ export function useEditor(
             const prevChar = state.sliceDoc(lineStart - 1, lineStart)
             if (prevChar === '\n') {
               deleteFrom = lineStart - 1
-              if (deleteFrom > 0) {
-                const prevPrevChar = state.sliceDoc(deleteFrom - 1, deleteFrom)
-                if (prevPrevChar === '\n') {
-                  deleteFrom = deleteFrom - 1
-                }
-              }
-            }
-          }
-
-          const afterPos = Math.min(deleteTo + 1, state.doc.length)
-          if (afterPos < state.doc.length) {
-            const nextChar = state.sliceDoc(deleteTo, afterPos)
-            if (nextChar === '\n') {
-              deleteTo = afterPos
-              const afterAfterPos = Math.min(deleteTo + 1, state.doc.length)
-              if (afterAfterPos < state.doc.length) {
-                const nextNextChar = state.sliceDoc(deleteTo, afterAfterPos)
-                if (nextNextChar === '\n') {
-                  deleteTo = afterAfterPos
-                }
-              }
             }
           }
 
