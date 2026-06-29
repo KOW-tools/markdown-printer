@@ -242,6 +242,7 @@ export function usePagination(
     let currentPageElements: string[] = []
     let currentHeight = 0
     let prevMarginBottom = 0
+    let firstContentOnPage = true
 
     for (const child of children) {
       const isPageBreak = child.dataset?.pageBreak === 'true'
@@ -253,6 +254,7 @@ export function usePagination(
         currentPageElements = [child.outerHTML]
         currentHeight = 0
         prevMarginBottom = 0
+        firstContentOnPage = true
         continue
       }
 
@@ -260,19 +262,21 @@ export function usePagination(
       const style = window.getComputedStyle(child)
       const childMarginTop = parseFloat(style.marginTop) || 0
       const childMarginBottom = parseFloat(style.marginBottom) || 0
-      const collapsedMargin = Math.min(prevMarginBottom, childMarginTop)
+      const collapsedMargin = firstContentOnPage
+        ? childMarginTop
+        : Math.min(prevMarginBottom, childMarginTop)
       const effectiveHeight = childHeight - collapsedMargin
 
       // At a page break, the browser print engine truncates the last element's 
       // marginBottom to 0. Account for this in the overflow check so the preview 
       // matches print output. Without this, the preview counts marginBottom that 
       // print discards, causing slightly different page fills.
-      const effectivePageHeight = currentPageElements.length === 0
+      const effectivePageHeight = firstContentOnPage
         ? maxPageHeight
         : maxPageHeight + prevMarginBottom
 
       if (child.tagName === 'UL' || child.tagName === 'OL') {
-        const fitsOnPage = currentPageElements.length === 0
+        const fitsOnPage = firstContentOnPage
           ? childHeight <= maxPageHeight
           : currentHeight + effectiveHeight <= effectivePageHeight
 
@@ -282,12 +286,15 @@ export function usePagination(
             currentPageElements = []
             currentHeight = 0
             prevMarginBottom = 0
+            firstContentOnPage = true
           }
 
           if (childHeight <= maxPageHeight) {
+            child.style.setProperty('margin-top', '0', 'important')
             currentPageElements.push(child.outerHTML)
-            currentHeight = childHeight
+            currentHeight = childHeight - childMarginTop
             prevMarginBottom = childMarginBottom
+            firstContentOnPage = false
           } else {
             const chunks = splitList(child as HTMLElement, maxPageHeight, maxPageHeight, contentWidth,
               `${fontFamilyCSS(font.value)}, sans-serif`, fontSize.value)
@@ -299,24 +306,33 @@ export function usePagination(
                 currentPageElements = []
                 currentHeight = 0
                 prevMarginBottom = 0
+                firstContentOnPage = true
               }
             }
+            firstContentOnPage = false
           }
 
           continue
         }
 
+        if (firstContentOnPage) {
+          child.style.setProperty('margin-top', '0', 'important')
+        }
         currentPageElements.push(child.outerHTML)
         currentHeight += effectiveHeight
         prevMarginBottom = childMarginBottom
+        firstContentOnPage = false
         continue
       }
 
       if (currentHeight + effectiveHeight > effectivePageHeight && currentPageElements.length > 0) {
         result.push({ index: result.length, elements: currentPageElements })
-        currentPageElements = []
-        currentHeight = 0
-        prevMarginBottom = 0
+        child.style.setProperty('margin-top', '0', 'important')
+        currentPageElements = [child.outerHTML]
+        currentHeight = childHeight - childMarginTop
+        prevMarginBottom = childMarginBottom
+        firstContentOnPage = false
+        continue
       }
 
       if (child.tagName === 'TABLE' && childHeight > maxPageHeight) {
@@ -325,6 +341,7 @@ export function usePagination(
           currentPageElements = []
           currentHeight = 0
           prevMarginBottom = 0
+          firstContentOnPage = true
         }
 
         const chunks = splitTable(child as HTMLElement, maxPageHeight, contentWidth, `${fontFamilyCSS(font.value)}, sans-serif`, fontSize.value)
@@ -335,14 +352,20 @@ export function usePagination(
             currentPageElements = []
             currentHeight = 0
             prevMarginBottom = 0
+            firstContentOnPage = true
           }
         }
+        firstContentOnPage = false
         continue
       }
 
+      if (firstContentOnPage) {
+        child.style.setProperty('margin-top', '0', 'important')
+      }
       currentPageElements.push(child.outerHTML)
       currentHeight += effectiveHeight
       prevMarginBottom = childMarginBottom
+      firstContentOnPage = false
     }
 
     if (currentPageElements.length > 0) {
