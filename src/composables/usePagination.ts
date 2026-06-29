@@ -122,6 +122,85 @@ export function usePagination(
     return chunks
   }
 
+  function splitList(listEl: HTMLElement, firstPageHeight: number, fullPageHeight: number, contentWidth: number, fontCSS: string, fontSizePx: number): string[] {
+    const tagName = listEl.tagName
+    const isOrdered = tagName === 'OL'
+    const isReversed = isOrdered && listEl.hasAttribute('reversed')
+    const items = Array.from(listEl.querySelectorAll(':scope > li'))
+
+    if (items.length === 0) return [listEl.outerHTML]
+
+    let baseStart = 1
+    if (isOrdered) {
+      const existingStart = listEl.getAttribute('start')
+      if (existingStart !== null) {
+        baseStart = parseInt(existingStart)
+      } else if (isReversed) {
+        baseStart = items.length
+      }
+    }
+
+    const measureDiv = document.createElement('div')
+    measureDiv.style.cssText =
+      'position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none;'
+    document.body.appendChild(measureDiv)
+
+    const wrapper = document.createElement('div')
+    wrapper.className = 'markdown-body'
+    wrapper.style.width = `${contentWidth}px`
+    wrapper.style.fontFamily = fontCSS
+    wrapper.style.fontSize = `${fontSizePx}px`
+    wrapper.style.lineHeight = '1.5'
+    measureDiv.appendChild(wrapper)
+
+    const chunks: string[] = []
+    let chunkItems: Element[] = []
+
+    function buildList(items: Element[], globalStartIndex: number): string {
+      let attrs = ''
+      for (const attr of listEl.attributes) {
+        if (attr.name === 'start') continue
+        attrs += ` ${attr.name}="${attr.value}"`
+      }
+
+      if (isOrdered) {
+        const startValue = isReversed
+          ? baseStart - globalStartIndex
+          : baseStart + globalStartIndex
+        attrs += ` start="${startValue}"`
+      }
+
+      const itemsHtml = items.map(r => r.outerHTML).join('')
+      return `<${tagName.toLowerCase()}${attrs}>${itemsHtml}</${tagName.toLowerCase()}>`
+    }
+
+    function measureChunk(items: Element[]): number {
+      wrapper.innerHTML = buildList(items, 0)
+      const list = wrapper.firstElementChild as HTMLElement
+      if (!list) return 0
+      return getElementHeight(list)
+    }
+
+    let chunkStartIndex = 0
+    let currentMaxHeight = firstPageHeight
+    for (let i = 0; i < items.length; i++) {
+      chunkItems.push(items[i])
+      if (measureChunk(chunkItems) > currentMaxHeight && chunkItems.length > 1) {
+        chunkItems.pop()
+        chunks.push(buildList(chunkItems, chunkStartIndex))
+        chunkStartIndex = i
+        chunkItems = [items[i]]
+        currentMaxHeight = fullPageHeight
+      }
+    }
+    if (chunkItems.length > 0) {
+      chunks.push(buildList(chunkItems, chunkStartIndex))
+    }
+
+    document.body.removeChild(measureDiv)
+    return chunks
+  }
+
   async function splitIntoPages() {
     const container = getMeasureContainer()
 
@@ -191,6 +270,47 @@ export function usePagination(
       const effectivePageHeight = currentPageElements.length === 0
         ? maxPageHeight
         : maxPageHeight + prevMarginBottom
+
+      if (child.tagName === 'UL' || child.tagName === 'OL') {
+        const fitsOnPage = currentPageElements.length === 0
+          ? childHeight <= maxPageHeight
+          : currentHeight + effectiveHeight <= effectivePageHeight
+
+        if (!fitsOnPage) {
+          if (currentPageElements.length > 0) {
+            result.push({ index: result.length, elements: currentPageElements })
+            currentPageElements = []
+            currentHeight = 0
+            prevMarginBottom = 0
+          }
+
+          if (childHeight <= maxPageHeight) {
+            currentPageElements.push(child.outerHTML)
+            currentHeight = childHeight
+            prevMarginBottom = childMarginBottom
+          } else {
+            const chunks = splitList(child as HTMLElement, maxPageHeight, maxPageHeight, contentWidth,
+              `${fontFamilyCSS(font.value)}, sans-serif`, fontSize.value)
+
+            for (let i = 0; i < chunks.length; i++) {
+              currentPageElements.push(chunks[i])
+              if (i < chunks.length - 1) {
+                result.push({ index: result.length, elements: currentPageElements })
+                currentPageElements = []
+                currentHeight = 0
+                prevMarginBottom = 0
+              }
+            }
+          }
+
+          continue
+        }
+
+        currentPageElements.push(child.outerHTML)
+        currentHeight += effectiveHeight
+        prevMarginBottom = childMarginBottom
+        continue
+      }
 
       if (currentHeight + effectiveHeight > effectivePageHeight && currentPageElements.length > 0) {
         result.push({ index: result.length, elements: currentPageElements })
