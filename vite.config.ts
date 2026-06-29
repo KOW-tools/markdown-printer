@@ -45,6 +45,11 @@ export default defineConfig({
           rename: { stripBase: 3 },
         },
         {
+          src: 'node_modules/katex/dist/fonts/*',
+          dest: 'vendor/fonts',
+          rename: { stripBase: 4 },
+        },
+        {
           src: 'node_modules/highlight.js/styles/github.min.css',
           dest: 'vendor',
           rename: { stripBase: 3 },
