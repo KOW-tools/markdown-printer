@@ -48,59 +48,8 @@ export const GOOGLE_FONTS: FontOption[] = [
   { name: 'Source Code Pro', family: 'Source Code Pro', source: 'google', group: 'Google Fonts' },
 ]
 
-const MACOS_FONTS: FontOption[] = [
-  { name: 'SF Pro', family: '-apple-system', source: 'system', group: 'System (macOS)' },
-  { name: 'Helvetica Neue', family: 'Helvetica Neue', source: 'system', group: 'System (macOS)' },
-  { name: 'Helvetica', family: 'Helvetica', source: 'system', group: 'System (macOS)' },
-  { name: 'Times New Roman', family: 'Times New Roman', source: 'system', group: 'System (macOS)' },
-  { name: 'Courier New', family: 'Courier New', source: 'system', group: 'System (macOS)' },
-  { name: 'Monaco', family: 'Monaco', source: 'system', group: 'System (macOS)' },
-  { name: 'Menlo', family: 'Menlo', source: 'system', group: 'System (macOS)' },
-  { name: 'PingFang SC', family: 'PingFang SC', source: 'system', group: 'System (macOS)' },
-  { name: 'PingFang TC', family: 'PingFang TC', source: 'system', group: 'System (macOS)' },
-  { name: 'Hiragino Sans', family: 'Hiragino Sans', source: 'system', group: 'System (macOS)' },
-]
-
-const WINDOWS_FONTS: FontOption[] = [
-  { name: 'Segoe UI', family: 'Segoe UI', source: 'system', group: 'System (Windows)' },
-  { name: 'Arial', family: 'Arial', source: 'system', group: 'System (Windows)' },
-  { name: 'Calibri', family: 'Calibri', source: 'system', group: 'System (Windows)' },
-  { name: 'Cambria', family: 'Cambria', source: 'system', group: 'System (Windows)' },
-  { name: 'Consolas', family: 'Consolas', source: 'system', group: 'System (Windows)' },
-  { name: 'Courier New', family: 'Courier New', source: 'system', group: 'System (Windows)' },
-  { name: 'Times New Roman', family: 'Times New Roman', source: 'system', group: 'System (Windows)' },
-  { name: 'Verdana', family: 'Verdana', source: 'system', group: 'System (Windows)' },
-  { name: 'Georgia', family: 'Georgia', source: 'system', group: 'System (Windows)' },
-]
-
-const LINUX_FONTS: FontOption[] = [
-  { name: 'DejaVu Sans', family: 'DejaVu Sans', source: 'system', group: 'System (Linux)' },
-  { name: 'DejaVu Serif', family: 'DejaVu Serif', source: 'system', group: 'System (Linux)' },
-  { name: 'Liberation Sans', family: 'Liberation Sans', source: 'system', group: 'System (Linux)' },
-  { name: 'Liberation Serif', family: 'Liberation Serif', source: 'system', group: 'System (Linux)' },
-  { name: 'Liberation Mono', family: 'Liberation Mono', source: 'system', group: 'System (Linux)' },
-  { name: 'Noto Sans', family: 'Noto Sans', source: 'system', group: 'System (Linux)' },
-  { name: 'Noto Serif', family: 'Noto Serif', source: 'system', group: 'System (Linux)' },
-]
-
-function detectPlatform(): 'macos' | 'windows' | 'linux' {
-  const ua = navigator.userAgent.toLowerCase()
-  if (ua.includes('mac')) return 'macos'
-  if (ua.includes('win')) return 'windows'
-  return 'linux'
-}
-
-export function getSystemFonts(): FontOption[] {
-  const platform = detectPlatform()
-  switch (platform) {
-    case 'macos': return MACOS_FONTS
-    case 'windows': return WINDOWS_FONTS
-    case 'linux': return LINUX_FONTS
-  }
-}
-
 export function getAllFonts(): FontOption[] {
-  return [...GENERIC_FONTS, ...GOOGLE_FONTS, ...getSystemFonts()]
+  return [...GENERIC_FONTS, ...GOOGLE_FONTS]
 }
 
 export const DEFAULT_CONTENT = `# Welcome to Markdown Printer

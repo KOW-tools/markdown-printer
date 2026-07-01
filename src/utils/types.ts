@@ -17,7 +17,7 @@ export interface PageSize {
 export interface FontOption {
   name: string
   family: string
-  source: 'google' | 'system' | 'generic' | 'uploaded'
+  source: 'google' | 'generic' | 'uploaded'
   group?: string
 }
 
