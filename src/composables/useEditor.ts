@@ -7,26 +7,10 @@ import { defaultKeymap, history, historyKeymap, indentWithTab, undo as cmUndo, r
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search'
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete'
 import { lintKeymap } from '@codemirror/lint'
+import { vsCodeLight } from '@fsegurai/codemirror-theme-vscode-light'
+import { vsCodeDark } from '@fsegurai/codemirror-theme-vscode-dark'
 import { ghostTextExtension } from '../plugins/ghostText'
 import { isLlmEnabled } from '../utils/storage'
-
-const lightTheme = EditorView.theme({
-  '&': { backgroundColor: '#ffffff' },
-  '.cm-content': { caretColor: '#333333' },
-  '.cm-cursor': { borderLeftColor: '#333333' },
-  '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': { backgroundColor: '#d4e6ff' },
-  '.cm-gutters': { backgroundColor: '#f5f5f5', borderRight: '1px solid #e0e0e0' },
-})
-
-const darkTheme = EditorView.theme({
-  '&': { backgroundColor: '#1a1a1a' },
-  '.cm-content': { caretColor: '#e0e0e0' },
-  '.cm-cursor': { borderLeftColor: '#e0e0e0' },
-  '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': { backgroundColor: '#264f78' },
-  '.cm-gutters': { backgroundColor: '#2a2a2a', borderRight: '1px solid #444444' },
-  '.cm-activeLineGutter': { backgroundColor: '#333333' },
-  '.cm-activeLine': { backgroundColor: '#2a2a2a' },
-})
 
 function isDarkMode(): boolean {
   if (document.documentElement.classList.contains('dark')) return true
@@ -265,7 +249,7 @@ export function useEditor(
           indentWithTab,
         ]),
         updateListener,
-        themeCompartment.of(getInitialDark() ? darkTheme : lightTheme),
+        themeCompartment.of(getInitialDark() ? vsCodeDark : vsCodeLight),
         softWrapCompartment.of(initialSoftWrap ? EditorView.lineWrapping : []),
         EditorView.theme({
           '&': {
@@ -354,7 +338,7 @@ export function useEditor(
     themeObserver = new MutationObserver(() => {
       if (editorView.value) {
         editorView.value.dispatch({
-          effects: themeCompartment.reconfigure(isDarkMode() ? darkTheme : lightTheme),
+          effects: themeCompartment.reconfigure(isDarkMode() ? vsCodeDark : vsCodeLight),
         })
       }
     })
@@ -367,7 +351,7 @@ export function useEditor(
       if (saved) return // manual override active, ignore system
       if (editorView.value) {
         editorView.value.dispatch({
-          effects: themeCompartment.reconfigure(e.matches ? darkTheme : lightTheme),
+          effects: themeCompartment.reconfigure(e.matches ? vsCodeDark : vsCodeLight),
         })
       }
     }
