@@ -222,7 +222,8 @@ export function usePDF() {
         }
 
         div[data-page-break="true"] {
-          page-break-after: always;
+          page-break-before: always;
+          break-before: page;
         }
 
         * {
