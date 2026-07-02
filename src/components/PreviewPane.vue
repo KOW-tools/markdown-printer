@@ -59,17 +59,42 @@ const scaleRange = computed(() => getScaleRange(currentPageSize.value, props.ori
 function onWheel(e: WheelEvent) {
   if (e.ctrlKey || e.metaKey) {
     e.preventDefault()
+    const container = previewContainer.value
+    if (!container) return
+
     const delta = -Math.sign(e.deltaY)
     const step = 0.05
     const raw = Math.round((props.scale + delta * step) * 100) / 100
     const clamped = Math.max(scaleRange.value.min, Math.min(scaleRange.value.max, raw))
+
+    // Capture mouse position relative to container
+    const rect = container.getBoundingClientRect()
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+    const scrollLeft = container.scrollLeft
+    const scrollTop = container.scrollTop
+
+    // The point in content space under the mouse cursor
+    const contentX = scrollLeft + mouseX
+    const contentY = scrollTop + mouseY
+
     emit('update:scale', clamped)
+
+    // After scale changes, adjust scroll to keep mouse point in place
+    const ratio = clamped / props.scale
+    container.scrollLeft = contentX * ratio - mouseX
+    container.scrollTop = contentY * ratio - mouseY
   }
 }
 
 // --- Zoom: pinch-to-touch ---
 let pinchStartDist = 0
 let pinchStartScale = 0
+let pinchStartScrollLeft = 0
+let pinchStartScrollTop = 0
+let pinchStartRect: DOMRect | null = null
+let pinchStartMidX = 0
+let pinchStartMidY = 0
 
 function touchDist(touches: TouchList): number {
   const dx = touches[0].clientX - touches[1].clientX
@@ -77,21 +102,49 @@ function touchDist(touches: TouchList): number {
   return Math.sqrt(dx * dx + dy * dy)
 }
 
+function touchMidpoint(touches: TouchList, rect: DOMRect): { x: number; y: number } {
+  const midX = (touches[0].clientX + touches[1].clientX) / 2
+  const midY = (touches[0].clientY + touches[1].clientY) / 2
+  return { x: midX - rect.left, y: midY - rect.top }
+}
+
 function onTouchStart(e: TouchEvent) {
   if (e.touches.length === 2) {
     pinchStartDist = touchDist(e.touches)
     pinchStartScale = props.scale
+    const container = previewContainer.value
+    if (container) {
+      pinchStartScrollLeft = container.scrollLeft
+      pinchStartScrollTop = container.scrollTop
+      pinchStartRect = container.getBoundingClientRect()
+      const mid = touchMidpoint(e.touches, pinchStartRect)
+      pinchStartMidX = mid.x
+      pinchStartMidY = mid.y
+    }
   }
 }
 
 function onTouchMove(e: TouchEvent) {
   if (e.touches.length === 2 && pinchStartDist > 0) {
     e.preventDefault()
+    const container = previewContainer.value
+    if (!container || !pinchStartRect) return
+
     const curDist = touchDist(e.touches)
     const ratio = curDist / pinchStartDist
     const raw = Math.round(pinchStartScale * ratio * 100) / 100
     const clamped = Math.max(scaleRange.value.min, Math.min(scaleRange.value.max, raw))
+
+    // The point in content space under the pinch midpoint
+    const contentX = pinchStartScrollLeft + pinchStartMidX
+    const contentY = pinchStartScrollTop + pinchStartMidY
+
     emit('update:scale', clamped)
+
+    // Adjust scroll to keep pinch midpoint in place
+    const scaleRatio = clamped / pinchStartScale
+    container.scrollLeft = contentX * scaleRatio - pinchStartMidX
+    container.scrollTop = contentY * scaleRatio - pinchStartMidY
   }
 }
 
