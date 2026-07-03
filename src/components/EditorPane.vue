@@ -119,7 +119,7 @@ async function onDrop(e: DragEvent) {
     if (!file.type.startsWith('image/')) continue
     const saved = await uploadImage(file)
     if (saved) {
-      const insertText = `![${saved.name}](./${saved.name})`
+      const insertText = `![${saved.name}](./${encodeURIComponent(saved.name)})`
       handleContextAction('paste', insertText)
     }
   }
@@ -132,7 +132,7 @@ function openGalleryDialog() {
 }
 
 function onGallerySelect(filename: string) {
-  const insertText = `![${filename}](./${filename})`
+  const insertText = `![${filename}](./${encodeURIComponent(filename)})`
   handleContextAction('paste', insertText)
 }
 

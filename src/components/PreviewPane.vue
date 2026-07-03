@@ -184,7 +184,7 @@ watch(
     const matches = [...html.matchAll(imgRegex)]
 
     for (const match of matches) {
-      const filename = match[2]
+      const filename = decodeURIComponent(match[2])
       const img = images.value.find(i => i.name === filename)
       if (img) {
         const url = getImageUrl(img.id) || ''
