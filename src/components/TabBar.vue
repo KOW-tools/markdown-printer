@@ -37,7 +37,7 @@
         <p class="about-desc">A paged markdown previewer that brings markdown to real-world paper. Write in markdown, preview with pagination, and print or export to PDF — exactly as it will appear on paper.</p>
         <p class="about-license">Released under the Apache 2.0 License.</p>
         <div class="about-actions">
-          <Button severity="secondary" outlined as="a" href="https://github.com/KOWX712/markdown-printer" target="_blank" rel="noopener noreferrer" class="about-link">
+          <Button severity="secondary" outlined as="a" href="https://github.com/KOW-tools/markdown-printer" target="_blank" rel="noopener noreferrer" class="about-link">
             <ExternalLink :size="16" />
             View Source Code
           </Button>

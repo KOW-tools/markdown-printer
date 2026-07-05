@@ -80,4 +80,4 @@ We may update this Privacy Policy from time to time. Any changes will be reflect
 
 If you have questions about this Privacy Policy or wish to exercise your data rights, please reach out via:
 
-* GitHub: https://www.github.com/KOWX712/markdown-printer
+* GitHub: https://github.com/KOW-tools/markdown-printer

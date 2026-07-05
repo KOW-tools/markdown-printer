@@ -47,8 +47,8 @@
 
 ### Links and Images
 
-[hyperlink](https://github.com/KOWX712/markdown-printer)
-![markdown](https://raw.githubusercontent.com/KOWX712/markdown-printer/master/public/favicon.svg)
+[hyperlink](https://github.com/KOW-tools/markdown-printer)
+![markdown](https://raw.githubusercontent.com/KOW-tools/markdown-printer/master/public/favicon.svg)
 
 ### Code Block
 

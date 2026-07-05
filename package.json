@@ -29,7 +29,7 @@
     "@fontsource/source-code-pro": "^5.2.7",
     "@fsegurai/codemirror-theme-vscode-dark": "^6.2.6",
     "@fsegurai/codemirror-theme-vscode-light": "^6.2.6",
-    "@lucide/vue": "^1.22.0",
+    "@lucide/vue": "^1.23.0",
     "@primeuix/themes": "^2.0.3",
     "@vueuse/core": "^14.3.0",
     "codemirror": "^6.0.2",
@@ -55,7 +55,7 @@
     "@vue/test-utils": "^2.4.11",
     "happy-dom": "^20.10.6",
     "typescript": "^6.0.3",
-    "vite": "^8.1.2",
+    "vite": "^8.1.3",
     "vite-plugin-static-copy": "^4.1.1",
     "vitest": "^4.1.9",
     "vue-tsc": "^3.3.6"
