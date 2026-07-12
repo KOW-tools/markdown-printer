@@ -201,6 +201,63 @@ export function usePagination(
     return chunks
   }
 
+  function splitPreBlock(preEl: HTMLElement, maxHeight: number, contentWidth: number, fontCSS: string, fontSizePx: number): string[] {
+    const codeEl = preEl.querySelector('code')
+    const useCodeTag = codeEl !== null
+    const content = useCodeTag ? codeEl!.innerHTML : preEl.innerHTML
+    const lines = content.split('\n')
+
+    if (lines.length <= 1) return [preEl.outerHTML]
+
+    const preAttrs = Array.from(preEl.attributes)
+      .map(a => ` ${a.name}="${a.value}"`)
+      .join('')
+
+    const measureDiv = document.createElement('div')
+    measureDiv.style.cssText =
+      'position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none;'
+    document.body.appendChild(measureDiv)
+
+    const wrapper = document.createElement('div')
+    wrapper.className = 'markdown-body'
+    wrapper.style.width = `${contentWidth}px`
+    wrapper.style.fontFamily = fontCSS
+    wrapper.style.fontSize = `${fontSizePx}px`
+    wrapper.style.lineHeight = '1.5'
+    measureDiv.appendChild(wrapper)
+
+    const chunks: string[] = []
+    let chunkLines: string[] = []
+
+    function buildPre(lines: string[]): string {
+      const joined = lines.join('\n')
+      if (useCodeTag) {
+        return `<pre${preAttrs}><code>${joined}</code></pre>`
+      }
+      return `<pre${preAttrs}>${joined}</pre>`
+    }
+
+    function measureChunk(lines: string[]): number {
+      wrapper.innerHTML = buildPre(lines)
+      const pre = wrapper.firstElementChild as HTMLElement
+      if (!pre) return 0
+      return getElementHeight(pre)
+    }
+
+    for (const line of lines) {
+      chunkLines.push(line)
+      if (measureChunk(chunkLines) > maxHeight && chunkLines.length > 1) {
+        chunkLines.pop()
+        chunks.push(buildPre(chunkLines))
+        chunkLines = [line]
+      }
+    }
+    if (chunkLines.length > 0) chunks.push(buildPre(chunkLines))
+
+    document.body.removeChild(measureDiv)
+    return chunks
+  }
+
   async function splitIntoPages() {
     const container = getMeasureContainer()
 
@@ -297,6 +354,56 @@ export function usePagination(
             firstContentOnPage = false
           } else {
             const chunks = splitList(child as HTMLElement, maxPageHeight, maxPageHeight, contentWidth,
+              `${fontFamilyCSS(font.value)}, sans-serif`, fontSize.value)
+
+            for (let i = 0; i < chunks.length; i++) {
+              currentPageElements.push(chunks[i])
+              if (i < chunks.length - 1) {
+                result.push({ index: result.length, elements: currentPageElements })
+                currentPageElements = []
+                currentHeight = 0
+                prevMarginBottom = 0
+                firstContentOnPage = true
+              }
+            }
+            firstContentOnPage = false
+          }
+
+          continue
+        }
+
+        if (firstContentOnPage) {
+          child.style.setProperty('margin-top', '0', 'important')
+        }
+        currentPageElements.push(child.outerHTML)
+        currentHeight += effectiveHeight
+        prevMarginBottom = childMarginBottom
+        firstContentOnPage = false
+        continue
+      }
+
+      if (child.tagName === 'PRE') {
+        const fitsOnPage = firstContentOnPage
+          ? childHeight <= maxPageHeight
+          : currentHeight + effectiveHeight <= effectivePageHeight
+
+        if (!fitsOnPage) {
+          if (currentPageElements.length > 0) {
+            result.push({ index: result.length, elements: currentPageElements })
+            currentPageElements = []
+            currentHeight = 0
+            prevMarginBottom = 0
+            firstContentOnPage = true
+          }
+
+          if (childHeight <= maxPageHeight) {
+            child.style.setProperty('margin-top', '0', 'important')
+            currentPageElements.push(child.outerHTML)
+            currentHeight = childHeight - childMarginTop
+            prevMarginBottom = childMarginBottom
+            firstContentOnPage = false
+          } else {
+            const chunks = splitPreBlock(child as HTMLElement, maxPageHeight, contentWidth,
               `${fontFamilyCSS(font.value)}, sans-serif`, fontSize.value)
 
             for (let i = 0; i < chunks.length; i++) {
