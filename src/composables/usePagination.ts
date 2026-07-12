@@ -62,7 +62,7 @@ export function usePagination(
     ).then(() => {})
   }
 
-  function splitTable(tableEl: HTMLElement, maxHeight: number, contentWidth: number, fontCSS: string, fontSizePx: number): string[] {
+  function splitTable(tableEl: HTMLElement, firstPageHeight: number, fullPageHeight: number, contentWidth: number, fontCSS: string, fontSizePx: number): string[] {
     const thead = tableEl.querySelector('thead')
     const theadHtml = thead ? thead.outerHTML : ''
     const tbody = tableEl.querySelector('tbody')
@@ -108,12 +108,14 @@ export function usePagination(
       return getElementHeight(table)
     }
 
+    let currentMaxHeight = firstPageHeight
     for (const row of rows) {
       chunkRows.push(row)
-      if (measureChunk(chunkRows) > maxHeight && chunkRows.length > 1) {
+      if (measureChunk(chunkRows) > currentMaxHeight && chunkRows.length > 1) {
         chunkRows.pop()
         chunks.push(buildTable(chunkRows))
         chunkRows = [row]
+        currentMaxHeight = fullPageHeight
       }
     }
     if (chunkRows.length > 0) chunks.push(buildTable(chunkRows))
@@ -201,7 +203,7 @@ export function usePagination(
     return chunks
   }
 
-  function splitPreBlock(preEl: HTMLElement, maxHeight: number, contentWidth: number, fontCSS: string, fontSizePx: number): string[] {
+  function splitPreBlock(preEl: HTMLElement, firstPageHeight: number, fullPageHeight: number, contentWidth: number, fontCSS: string, fontSizePx: number): string[] {
     const codeEl = preEl.querySelector('code')
     const useCodeTag = codeEl !== null
     const content = useCodeTag ? codeEl!.innerHTML : preEl.innerHTML
@@ -244,12 +246,14 @@ export function usePagination(
       return getElementHeight(pre)
     }
 
+    let currentMaxHeight = firstPageHeight
     for (const line of lines) {
       chunkLines.push(line)
-      if (measureChunk(chunkLines) > maxHeight && chunkLines.length > 1) {
+      if (measureChunk(chunkLines) > currentMaxHeight && chunkLines.length > 1) {
         chunkLines.pop()
         chunks.push(buildPre(chunkLines))
         chunkLines = [line]
+        currentMaxHeight = fullPageHeight
       }
     }
     if (chunkLines.length > 0) chunks.push(buildPre(chunkLines))
@@ -300,6 +304,33 @@ export function usePagination(
     let currentHeight = 0
     let prevMarginBottom = 0
     let firstContentOnPage = true
+
+    function flushPage(): void {
+      if (currentPageElements.length > 0) {
+        result.push({ index: result.length, elements: currentPageElements })
+        currentPageElements = []
+      }
+      currentHeight = 0
+      prevMarginBottom = 0
+      firstContentOnPage = true
+    }
+
+    function measureChunkHtml(htmlStr: string): { height: number; marginBottom: number } {
+      const div = document.createElement('div')
+      div.style.cssText =
+        'position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none;'
+      div.style.width = `${contentWidth}px`
+      div.style.fontFamily = `${fontFamilyCSS(font.value)}, sans-serif`
+      div.style.fontSize = `${fontSize.value}px`
+      div.style.lineHeight = '1.5'
+      document.body.appendChild(div)
+      div.innerHTML = htmlStr
+      const h = getElementHeight(div)
+      const lastEl = div.lastElementChild as HTMLElement
+      const mb = lastEl ? parseFloat(window.getComputedStyle(lastEl).marginBottom) || 0 : 0
+      document.body.removeChild(div)
+      return { height: h, marginBottom: mb }
+    }
 
     for (const child of children) {
       const isPageBreak = child.dataset?.pageBreak === 'true'
@@ -366,6 +397,9 @@ export function usePagination(
                 firstContentOnPage = true
               }
             }
+            const _last = measureChunkHtml(chunks[chunks.length - 1])
+            currentHeight = _last.height
+            prevMarginBottom = _last.marginBottom
             firstContentOnPage = false
           }
 
@@ -388,22 +422,28 @@ export function usePagination(
           : currentHeight + effectiveHeight <= effectivePageHeight
 
         if (!fitsOnPage) {
-          if (currentPageElements.length > 0) {
-            result.push({ index: result.length, elements: currentPageElements })
-            currentPageElements = []
-            currentHeight = 0
-            prevMarginBottom = 0
-            firstContentOnPage = true
-          }
-
           if (childHeight <= maxPageHeight) {
+            if (currentPageElements.length > 0) {
+              result.push({ index: result.length, elements: currentPageElements })
+              currentPageElements = []
+              currentHeight = 0
+              prevMarginBottom = 0
+              firstContentOnPage = true
+            }
             child.style.setProperty('margin-top', '0', 'important')
             currentPageElements.push(child.outerHTML)
             currentHeight = childHeight - childMarginTop
             prevMarginBottom = childMarginBottom
             firstContentOnPage = false
           } else {
-            const chunks = splitPreBlock(child as HTMLElement, maxPageHeight, contentWidth,
+            let remainingSpace = firstContentOnPage
+              ? maxPageHeight
+              : effectivePageHeight - currentHeight
+            if (!firstContentOnPage && remainingSpace < fontSize.value * 1.5 + 32) {
+              flushPage()
+              remainingSpace = maxPageHeight
+            }
+            const chunks = splitPreBlock(child as HTMLElement, remainingSpace, maxPageHeight, contentWidth,
               `${fontFamilyCSS(font.value)}, sans-serif`, fontSize.value)
 
             for (let i = 0; i < chunks.length; i++) {
@@ -416,6 +456,68 @@ export function usePagination(
                 firstContentOnPage = true
               }
             }
+            const _last = measureChunkHtml(chunks[chunks.length - 1])
+            currentHeight = _last.height
+            prevMarginBottom = _last.marginBottom
+            firstContentOnPage = false
+          }
+
+          continue
+        }
+
+        if (firstContentOnPage) {
+          child.style.setProperty('margin-top', '0', 'important')
+        }
+        currentPageElements.push(child.outerHTML)
+        currentHeight += effectiveHeight
+        prevMarginBottom = childMarginBottom
+        firstContentOnPage = false
+        continue
+      }
+
+      if (child.tagName === 'TABLE') {
+        const fitsOnPage = firstContentOnPage
+          ? childHeight <= maxPageHeight
+          : currentHeight + effectiveHeight <= effectivePageHeight
+
+        if (!fitsOnPage) {
+          if (childHeight <= maxPageHeight) {
+            if (currentPageElements.length > 0) {
+              result.push({ index: result.length, elements: currentPageElements })
+              currentPageElements = []
+              currentHeight = 0
+              prevMarginBottom = 0
+              firstContentOnPage = true
+            }
+            child.style.setProperty('margin-top', '0', 'important')
+            currentPageElements.push(child.outerHTML)
+            currentHeight = childHeight - childMarginTop
+            prevMarginBottom = childMarginBottom
+            firstContentOnPage = false
+          } else {
+            let remainingSpace = firstContentOnPage
+              ? maxPageHeight
+              : effectivePageHeight - currentHeight
+            if (!firstContentOnPage && remainingSpace < fontSize.value * 1.5 + 16) {
+              flushPage()
+              remainingSpace = maxPageHeight
+            }
+            const chunks = splitTable(child as HTMLElement, remainingSpace, maxPageHeight, contentWidth,
+              `${fontFamilyCSS(font.value)}, sans-serif`, fontSize.value)
+
+            for (let i = 0; i < chunks.length; i++) {
+              currentPageElements.push(chunks[i])
+              if (i < chunks.length - 1) {
+                result.push({ index: result.length, elements: currentPageElements })
+                currentPageElements = []
+                currentHeight = 0
+                prevMarginBottom = 0
+                firstContentOnPage = true
+              }
+            }
+            const _last = measureChunkHtml(chunks[chunks.length - 1])
+            currentHeight = _last.height
+            prevMarginBottom = _last.marginBottom
             firstContentOnPage = false
           }
 
@@ -438,30 +540,6 @@ export function usePagination(
         currentPageElements = [child.outerHTML]
         currentHeight = childHeight - childMarginTop
         prevMarginBottom = childMarginBottom
-        firstContentOnPage = false
-        continue
-      }
-
-      if (child.tagName === 'TABLE' && childHeight > maxPageHeight) {
-        if (currentPageElements.length > 0) {
-          result.push({ index: result.length, elements: currentPageElements })
-          currentPageElements = []
-          currentHeight = 0
-          prevMarginBottom = 0
-          firstContentOnPage = true
-        }
-
-        const chunks = splitTable(child as HTMLElement, maxPageHeight, contentWidth, `${fontFamilyCSS(font.value)}, sans-serif`, fontSize.value)
-        for (let i = 0; i < chunks.length; i++) {
-          currentPageElements.push(chunks[i])
-          if (i < chunks.length - 1) {
-            result.push({ index: result.length, elements: currentPageElements })
-            currentPageElements = []
-            currentHeight = 0
-            prevMarginBottom = 0
-            firstContentOnPage = true
-          }
-        }
         firstContentOnPage = false
         continue
       }
