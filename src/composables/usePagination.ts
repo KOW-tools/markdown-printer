@@ -317,6 +317,7 @@ export function usePagination(
 
     function measureChunkHtml(htmlStr: string): { height: number; marginBottom: number } {
       const div = document.createElement('div')
+      div.className = 'markdown-body'
       div.style.cssText =
         'position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none;'
       div.style.width = `${contentWidth}px`
@@ -419,7 +420,7 @@ export function usePagination(
       if (child.tagName === 'PRE') {
         const fitsOnPage = firstContentOnPage
           ? childHeight <= maxPageHeight
-          : currentHeight + effectiveHeight <= effectivePageHeight
+          : currentHeight + effectiveHeight <= maxPageHeight
 
         if (!fitsOnPage) {
           if (childHeight <= maxPageHeight) {
@@ -438,13 +439,17 @@ export function usePagination(
           } else {
             let remainingSpace = firstContentOnPage
               ? maxPageHeight
-              : effectivePageHeight - currentHeight
+              : maxPageHeight - currentHeight
             if (!firstContentOnPage && remainingSpace < fontSize.value * 1.5 + 32) {
               flushPage()
               remainingSpace = maxPageHeight
             }
             const chunks = splitPreBlock(child as HTMLElement, remainingSpace, maxPageHeight, contentWidth,
               `${fontFamilyCSS(font.value)}, sans-serif`, fontSize.value)
+
+            if (!firstContentOnPage && chunks.length > 0) {
+              chunks[0] = chunks[0].replace('<pre', '<pre style="margin-top:0 !important;"')
+            }
 
             for (let i = 0; i < chunks.length; i++) {
               currentPageElements.push(chunks[i])
@@ -478,7 +483,7 @@ export function usePagination(
       if (child.tagName === 'TABLE') {
         const fitsOnPage = firstContentOnPage
           ? childHeight <= maxPageHeight
-          : currentHeight + effectiveHeight <= effectivePageHeight
+          : currentHeight + effectiveHeight <= maxPageHeight
 
         if (!fitsOnPage) {
           if (childHeight <= maxPageHeight) {
@@ -497,13 +502,17 @@ export function usePagination(
           } else {
             let remainingSpace = firstContentOnPage
               ? maxPageHeight
-              : effectivePageHeight - currentHeight
+              : maxPageHeight - currentHeight
             if (!firstContentOnPage && remainingSpace < fontSize.value * 1.5 + 16) {
               flushPage()
               remainingSpace = maxPageHeight
             }
             const chunks = splitTable(child as HTMLElement, remainingSpace, maxPageHeight, contentWidth,
               `${fontFamilyCSS(font.value)}, sans-serif`, fontSize.value)
+
+            if (!firstContentOnPage && chunks.length > 0) {
+              chunks[0] = chunks[0].replace('<table', '<table style="margin-top:0 !important;"')
+            }
 
             for (let i = 0; i < chunks.length; i++) {
               currentPageElements.push(chunks[i])
